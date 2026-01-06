@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import Header from './components/Header';
 import PostCard from './components/PostCard';
 import AIAssistant from './components/AIAssistant';
+import JobDetailModal from './components/JobDetailModal';
 import { MOCK_POSTS, LOCATIONS, CATEGORIES, EXPERIENCES } from './constants';
 import { JobPost, AISummaryResponse } from './types';
 import { summarizePost } from './services/geminiService';
@@ -123,144 +124,74 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex justify-between items-center px-2">
-              <h3 className="text-sm font-bold text-gray-500">전체 <span className="text-yellow-500">{filteredPosts.length}</span>건의 공고</h3>
-              <div className="flex gap-4">
-                <button className="text-xs font-bold text-gray-400 hover:text-gray-600">최신순</button>
-                <button className="text-xs font-bold text-gray-400 hover:text-gray-600">마감임박순</button>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredPosts.length > 0 ? (
-                filteredPosts.map(post => (
-                  <PostCard key={post.id} post={post} onSelect={handleSelectPost} />
-                ))
-              ) : (
-                <div className="col-span-full py-32 flex flex-col items-center justify-center bg-white rounded-3xl border border-dashed border-gray-200">
-                  <div className="bg-gray-50 p-4 rounded-full mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <p className="text-gray-400 font-medium">선택한 조건에 맞는 공고가 없어요.</p>
-                  <button onClick={() => { setSelectedArea('전체'); setSelectedCategory('전체'); setSelectedExp('전체'); setSearchTerm(''); }} className="mt-2 text-sm text-yellow-500 font-bold">전체 공고 보기</button>
-                </div>
-              )}
+        {/* Main Feed - Now takes more space since side-detail is gone */}
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="flex justify-between items-center px-4">
+            <h3 className="text-base font-bold text-gray-500">
+              전체 <span className="text-yellow-500">{filteredPosts.length}</span>건의 맞춤 공고가 있습니다
+            </h3>
+            <div className="flex gap-4">
+              <button className="text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors">최신순</button>
+              <button className="text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors">마감임박순</button>
             </div>
           </div>
-
-          <aside className="lg:col-span-1">
-            {selectedPost ? (
-              <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-2xl sticky top-24 overflow-hidden animate-slide-up">
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-yellow-500 mb-1 block">Detail View</span>
-                    <h2 className="text-2xl font-bold text-gray-800 leading-tight">{selectedPost.institutionName}</h2>
-                  </div>
-                  <button onClick={() => setSelectedPost(null)} className="p-2 hover:bg-gray-50 rounded-full transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                
-                {/* AI Summary Section */}
-                <div className="mb-8 p-6 bg-yellow-50/50 rounded-3xl border border-yellow-100 relative group transition-all hover:bg-yellow-50">
-                  <h4 className="text-xs font-black text-yellow-600 uppercase mb-3 flex items-center gap-1.5">
-                    <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
-                    AI 분석 Report
-                  </h4>
-                  {isAnalyzing ? (
-                    <div className="flex items-center gap-2 py-4">
-                      <div className="h-3 w-3 bg-yellow-300 rounded-full animate-bounce"></div>
-                      <div className="h-3 w-3 bg-yellow-300 rounded-full animate-bounce delay-75"></div>
-                      <div className="h-3 w-3 bg-yellow-300 rounded-full animate-bounce delay-150"></div>
-                    </div>
-                  ) : aiAnalysis ? (
-                    <div className="space-y-5">
-                      <p className="text-sm font-semibold text-gray-800 leading-relaxed italic">"{aiAnalysis.summary}"</p>
-                      <div className="grid grid-cols-1 gap-4">
-                        <div className="space-y-1.5">
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">이런 점이 좋아요</p>
-                          <ul className="text-xs text-gray-600 space-y-1">
-                            {aiAnalysis.pros.map((pro, i) => <li key={i} className="flex gap-2"><span>✨</span>{pro}</li>)}
-                          </ul>
-                        </div>
-                        <div className="space-y-1.5">
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">지원 꿀팁</p>
-                          <ul className="text-xs text-gray-600 space-y-1">
-                            {aiAnalysis.tips.map((tip, i) => <li key={i} className="flex gap-2"><span>💡</span>{tip}</li>)}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-gray-400">데이터를 불러오는 중...</p>
-                  )}
-                </div>
-
-                <div className="space-y-6">
-                  <div className="bg-gray-50/50 p-5 rounded-2xl space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-400">모집분야</span>
-                      <span className="text-xs font-bold text-gray-700 bg-white px-2 py-1 rounded-lg border border-gray-100">{selectedPost.category}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-400">경력조건</span>
-                      <span className="text-xs font-bold text-gray-700">{selectedPost.experience}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-400">희망급여</span>
-                      <span className="text-xs font-bold text-gray-700">{selectedPost.salary}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="px-1 max-h-48 overflow-y-auto custom-scrollbar">
-                    <h4 className="text-sm font-bold text-gray-800 mb-2">상세 요강</h4>
-                    <p className="text-sm text-gray-600 leading-loose text-justify whitespace-pre-wrap">{selectedPost.content}</p>
-                  </div>
-
-                  <div className="flex gap-2 pt-4">
-                    <button className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-4 rounded-2xl shadow-xl transition-all transform active:scale-95">
-                      즉시 지원
-                    </button>
-                    <button className="p-4 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+            {filteredPosts.length > 0 ? (
+              filteredPosts.map(post => (
+                <PostCard key={post.id} post={post} onSelect={handleSelectPost} />
+              ))
             ) : (
-              <div className="bg-white rounded-[2.5rem] p-10 border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center space-y-6 h-[600px] sticky top-24">
-                <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div className="col-span-full py-32 flex flex-col items-center justify-center bg-white rounded-[3rem] border border-dashed border-gray-200">
+                <div className="bg-slate-50 p-6 rounded-full mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-400">공고를 선택해주세요</h3>
-                  <p className="text-sm text-gray-300 mt-2 px-6">공고를 선택하시면 AI가 지원에 필요한 핵심 정보와 성공 전략을 분석해 드립니다.</p>
-                </div>
+                <p className="text-gray-400 font-bold text-lg">검색 조건에 맞는 공고가 없어요.</p>
+                <p className="text-sm text-gray-300 mt-1">필터를 조정하거나 다른 키워드로 검색해보세요.</p>
+                <button 
+                  onClick={() => { setSelectedArea('전체'); setSelectedCategory('전체'); setSelectedExp('전체'); setSearchTerm(''); }} 
+                  className="mt-6 px-6 py-2 bg-yellow-400 text-white rounded-full font-bold text-sm shadow-md transition-all hover:bg-yellow-500"
+                >
+                  필터 초기화하기
+                </button>
               </div>
             )}
-          </aside>
+          </div>
         </div>
       </main>
 
+      {/* AI Floating Assistant */}
       <AIAssistant />
+
+      {/* Detail Modal - Replaces the aside element */}
+      {selectedPost && (
+        <JobDetailModal 
+          post={selectedPost}
+          aiAnalysis={aiAnalysis}
+          isAnalyzing={isAnalyzing}
+          onClose={() => setSelectedPost(null)}
+        />
+      )}
       
-      <footer className="mt-32 border-t border-gray-100 bg-white py-16">
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-          <div className="text-left">
-            <h4 className="text-lg font-bold text-gray-800 mb-2">아이들림 (Ai-Deul-Rim)</h4>
-            <p className="text-sm text-gray-400">대한민국 모든 유아교육 교사들의 성장을 응원합니다.</p>
+      <footer className="mt-32 border-t border-gray-100 bg-white py-20">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col items-center text-center space-y-6">
+          <div className="bg-yellow-50 p-4 rounded-3xl inline-block">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
           </div>
-          <p className="text-sm text-gray-400 md:text-right">© 2024 아이들림. All Rights Reserved.</p>
+          <div>
+            <h4 className="text-2xl font-black text-gray-800 mb-2">아이들림 (Ai-Deul-Rim)</h4>
+            <p className="text-gray-400 text-sm max-w-sm">대한민국 모든 유아교육 교사들과 기관의 성장을 연결하는 가장 스마트한 방법.</p>
+          </div>
+          <div className="flex gap-6 text-sm font-bold text-gray-500">
+            <a href="#" className="hover:text-yellow-500">이용약관</a>
+            <a href="#" className="hover:text-yellow-500">개인정보처리방침</a>
+            <a href="#" className="hover:text-yellow-500">고객센터</a>
+          </div>
+          <p className="text-xs text-gray-300 pt-6">© 2024 아이들림. All Rights Reserved.</p>
         </div>
       </footer>
     </div>
